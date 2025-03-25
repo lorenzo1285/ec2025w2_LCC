@@ -7,6 +7,66 @@ def compute_penalty(individual, maxsat_instance):
     satisfied = maxsat_instance.compute_fitness(individual)
     return total_clauses - satisfied
 
+''' Exercise 1: Clause Class (parsing and evaluating of individual clauses) '''
+
+class Clause:
+    def __init__(self, input_line, weighted=False):
+        self.weighted = weighted
+        self.weight, self.literals = self.parse(input_line)
+        #print(f"Clause created with literals: {self.literals}")
+
+    def parse(self, input_line):
+        parts = input_line.strip().split()
+        weight = float(parts[0])  # Extract the weight separately
+        literals = [int(x) for x in parts[1:-1]]  # Correctly ignore first element in weighted case
+        return weight, literals
+
+    def evaluate(self, assignment):
+        assignment_dict = {i + 1: val == '1' for i, val in enumerate(assignment)}
+
+        for lit in self.literals:
+            var_index = abs(lit)
+            value = assignment_dict[var_index]
+
+            if (lit > 0 and value) or (lit < 0 and not value):
+                return 1
+
+        return 0
+
+''' Exercise 2: WDIMACS Class ( Import and Evaluate File )'''
+
+class WDIMACS:
+    def __init__(self, filepath, weighted=False):
+        self.clauses = []
+        self.num_vars = 0
+        self.num_clauses = 0
+        self.weighted = weighted
+        self.parse(filepath)
+
+    def parse(self, filepath):
+        #print("Opening file:", filepath)
+        with open(filepath, "r") as file:
+            clause_count = 0
+            
+            for line in file:
+                #print("Reading line:", line.strip())  # clearly see each line read
+                if line.startswith("c"):
+                    continue
+                elif line.startswith("p"):
+                    parts = line.strip().split()
+                    self.num_vars = int(parts[2])
+                    self.num_clauses = int(parts[3])
+                    #print(f"Parsed num_vars: {self.num_vars}, num_clauses: {self.num_clauses}")
+                else:
+                    clause = Clause(line, weighted=self.weighted)
+                    #print("Parsed clause literals:", clause.literals)
+                    self.clauses.append(clause)
+                    clause_count += 1 #counter for limiting number of clauses
+
+    def evaluate(self, assignment):
+        return sum(clause.evaluate(assignment) for clause in self.clauses)
+    
+
 class MaxSAT:
     """
     A class to handle MAX-SAT problems, including parsing WCNF files
@@ -21,27 +81,6 @@ class MaxSAT:
         self.num_clauses = 0
         self.clauses = []
 
-    def load_wcnf(self, file_path):
-        """
-        Parses a WCNF file and extracts the clauses and metadata.
-        
-        Parameters:
-            file_path (str): Path to the WCNF file.
-        """
-        with open(file_path, "r") as file:
-            for line in file:
-                line = line.strip()
-                if not line or line.startswith("c"):  # Ignore comments
-                    continue
-                if line.startswith("p"):  # Problem line
-                    parts = line.split()
-                    self.num_variables = int(parts[2])
-                    self.num_clauses = int(parts[3])
-                else:
-                    # Store clause (ignoring the last '0' in each line)
-                    literals = list(map(int, line.split()[1:-1]))
-                    self.clauses.append(literals)
-
     def display_info(self):
         """
         Prints the details of the loaded MaxSAT problem.
@@ -53,33 +92,6 @@ class MaxSAT:
         for i, clause in enumerate(self.clauses[:5]):  # Show first 5 clauses
             print(f"     Clause {i+1}: {clause}")
 
-
-
-    def is_clause_satisfied(self, clause, assignment):
-        """
-        Checks if a given clause is satisfied by a given assignment.
-
-        Parameters:
-            clause (list): A list of literals representing a clause.
-            assignment (str): A bitstring (e.g., "1010") representing variable assignments.
-
-        Returns:
-            bool: True if the clause is satisfied, False otherwise.
-        """
-        for literal in clause:
-            var_index = abs(literal) - 1  # Convert 1-based index to 0-based
-            
-            # Check if the assignment is too short
-            if var_index >= len(assignment):
-                print(f"Warning: Assignment '{assignment}' is too short for clause {clause}")
-                return False  # Consider the clause unsatisfied
-            
-            var_value = int(assignment[var_index])
-            
-            if (literal > 0 and var_value == 1) or (literal < 0 and var_value == 0):
-                return True  # Clause is satisfied
-
-        return False  # Clause is not satisfied
     
     def evaluate_individual_against_clauses(self, clauses, assignment):
         """
