@@ -151,4 +151,4 @@ class IBGA:
 
             # Return the best individual after all generations or time budget
             best = max(population, key=lambda ind: self.maxsat_instance.compute_fitness(ind))
-            return best
+            return best, best_fitness, generation

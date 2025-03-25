@@ -1,22 +1,23 @@
 from maxsat import MaxSAT
 from IBGA import IBGA
+import time
 import argparse
 import pandas as pd
 
 # ✅ Argument parser for the WCNF file path
 parser = argparse.ArgumentParser(description="Run MAXSAT evolutionary algorithm.")
-parser.add_argument('--path', type=str, required=True, help='Path to the .wcnf file')
+parser.add_argument('-wdimacs', type=str, required=True, help='Path to the .wcnf file')
 args = parser.parse_args()
 maxsat = MaxSAT()
-maxsat.load_wcnf(args.path)
+maxsat.load_wcnf(args.wdimacs)
 maxsat.display_info()
 
 print(f"\n✅ Running sample with {maxsat.num_variables} variables and {maxsat.num_clauses} valid clauses")
 
 # ✅ Evolutionary Algorithm Parameters (editable)
 population_size = 38
-repetitions = 3           # ✅ Number of repetitions (Exercise 3)
-time_budget = 25          # ✅ Time budget per repetition (seconds)
+repetitions = 1           # ✅ Number of repetitions (Exercise 3)
+time_budget = 10          # ✅ Time budget per repetition (seconds)
 max_generations = 20      # ✅ Generations per repetition
 crossover_prob = 0.88
 mutation_prob = 0.04
@@ -26,6 +27,9 @@ use_lagrangian = False     # ✅ Optional: switch between classic / lagrangian r
 
 
 def main():
+
+    start_time = time.time() # ✅ Start time for the algorithm
+
     # ✅ Repeat the evolutionary process and output 't nsat xbest'
     for rep in range(repetitions):
         # ✅ Initialize random population for each repetition (as required)
@@ -53,30 +57,15 @@ def main():
 
 
     results_df = pd.DataFrame(results)
+    end_time = time.time()  # ✅ End timing
+    execution_time = end_time - start_time  # ✅ Compute execution time (t)
     print(results_df)
 
     pct = results_df['satisfied'].mean() * 100
     print(f"Percentage of Satisfied Clauses: {pct:.2f}%")
-    print(f"Best Individual: {best_individual}")
-    print(f"Number of Satisfied Clauses: {nsat}")
+    print(f"Best Individual (xbest): {best_individual}")
+    print(f"Number of Satisfied Clauses (nsat): {nsat}")
+    print(f"Total Execution Time (t): {execution_time:.4f} seconds")  # ✅ Print execution time
     
 if __name__ == '__main__':
     main()
-
-
-"""
-✅ HOW TO RUN THIS SCRIPT FROM TERMINAL (WINDOWS EXAMPLE):
-----------------------------------------------------------
-1. Open your terminal or Anaconda Prompt
-2. Navigate to your 'Code' folder where main.py is located:
-      cd C:\Users\loren\Documents\ec2025w2\Code
-3. (Optional) Activate your environment:
-      conda activate env_evo
-4. Run the script with the WCNF file path:
-      python main.py --path C:\Users\loren\Documents\ec2025w2\Data\sbox_4.wcnf
-   or (using relative path if you are inside /Code folder):
-      python main.py --path ../Data/sbox_4.wcnf
-
-✅ OPTIONAL: Redirect output to a text file for logging:
-      python main.py --path ../Data/sbox_4.wcnf > results.txt
-"""
